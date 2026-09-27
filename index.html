@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#fff8e8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="ご当地王" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>ご当地王｜47都道府県 名産クイズ</title>
+  <style>
+    :root {
+      --bg: #fff8e8;
+      --card: #ffffff;
+      --ink: #2a2a2a;
+      --muted: #7c7465;
+      --accent: #ff9f43;
+      --accent2: #58c6a3;
+      --danger: #ef6b6b;
+      --line: #eee2c8;
+      --shadow: 0 12px 35px rgba(67, 48, 17, .12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 8%, #fff1b8 0 6%, transparent 7%),
+        radial-gradient(circle at 90% 10%, #dff8ef 0 7%, transparent 8%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    .app {
+      width: min(100%, 520px);
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 20px 16px calc(28px + env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .card {
+      background: var(--card);
+      border: 2px solid var(--line);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+    .brand {
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: .08em;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: clamp(30px, 9vw, 44px);
+      line-height: 1.05;
+      margin: 0 0 14px;
+    }
+    .sub {
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+    .hero-emoji {
+      font-size: 74px;
+      text-align: center;
+      margin: 4px 0 18px;
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,.08));
+    }
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 18px;
+      padding: 16px 18px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .08s ease, opacity .2s ease, background .2s ease;
+      touch-action: manipulation;
+    }
+    button:active { transform: scale(.985); }
+    .primary { background: var(--accent); color: #fff; font-size: 18px; }
+    .ghost { margin-top: 10px; background: #f7f3ea; color: var(--ink); }
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: #f1eadc;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .progress > div {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), #ffc46b);
+      transition: width .25s ease;
+    }
+    .question-label {
+      text-align: center;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .specialty {
+      text-align: center;
+      font-size: clamp(30px, 9vw, 42px);
+      font-weight: 900;
+      margin: 6px 0 22px;
+    }
+    .emoji {
+      display: block;
+      font-size: 56px;
+      margin-bottom: 6px;
+    }
+    .choices {
+      display: grid;
+      gap: 12px;
+    }
+    .choice {
+      background: #fffaf0;
+      color: var(--ink);
+      border: 2px solid #eadfc9;
+      text-align: left;
+    }
+    .choice.correct {
+      background: #e8fbf4;
+      border-color: var(--accent2);
+    }
+    .choice.wrong {
+      background: #fff0f0;
+      border-color: var(--danger);
+    }
+    .choice:disabled { opacity: 1; cursor: default; }
+    .feedback {
+      min-height: 66px;
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: #f8f5ee;
+      line-height: 1.5;
+      font-weight: 700;
+      display: none;
+    }
+    .feedback.show { display: block; }
+    .next { margin-top: 14px; display: none; }
+    .next.show { display: block; }
+    .result-score {
+      font-size: 68px;
+      font-weight: 900;
+      text-align: center;
+      margin: 8px 0 4px;
+    }
+    .rank {
+      text-align: center;
+      font-weight: 900;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+    .tiny {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--muted);
+      margin-top: 16px;
+      text-align: center;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section id="startScreen" class="card">
+      <div class="brand">47都道府県 名産クイズ</div>
+      <div class="hero-emoji">🗾🍜🍡</div>
+      <h1>ご当地王</h1>
+      <p class="sub">名産品を見て、どの都道府県か当てよう！<br>1ゲーム10問の4択クイズです。</p>
+      <button id="startBtn" class="primary">ゲームスタート</button>
+      <p class="tiny">※ 名産品は各地域を代表するものの一例です。</p>
+    </section>
+
+    <section id="quizScreen" class="card hidden">
+      <div class="topline">
+        <span id="questionCount">第1問 / 10問</span>
+        <span id="scoreText">0点</span>
+      </div>
+      <div class="progress"><div id="progressBar"></div></div>
+
+      <div class="question-label">この名産品はどこの都道府県？</div>
+      <div class="specialty">
+        <span id="questionEmoji" class="emoji">🍜</span>
+        <span id="specialtyText">名産品</span>
+      </div>
+
+      <div id="choices" class="choices"></div>
+      <div id="feedback" class="feedback"></div>
+      <button id="nextBtn" class="primary next">次の問題へ</button>
+    </section>
+
+    <section id="resultScreen" class="card hidden">
+      <div class="brand">RESULT</div>
+      <div class="hero-emoji" id="resultEmoji">🏆</div>
+      <div id="resultScore" class="result-score">8 / 10</div>
+      <div id="rankText" class="rank">ご当地博士！</div>
+      <p id="resultMessage" class="sub" style="text-align:center;"></p>
+      <button id="retryBtn" class="primary">もう一度あそぶ</button>
+      <button id="backBtn" class="ghost">タイトルへ戻る</button>
+    </section>
+  </main>
+
+<script>
+const DATA = [{"prefecture": "北海道", "specialty": "ジンギスカン", "emoji": "🐑"}, {"prefecture": "青森県", "specialty": "せんべい汁", "emoji": "🍲"}, {"prefecture": "岩手県", "specialty": "わんこそば", "emoji": "🍜"}, {"prefecture": "宮城県", "specialty": "ずんだ餅", "emoji": "🟢"}, {"prefecture": "秋田県", "specialty": "きりたんぽ", "emoji": "🍢"}, {"prefecture": "山形県", "specialty": "芋煮", "emoji": "🥔"}, {"prefecture": "福島県", "specialty": "喜多方ラーメン", "emoji": "🍜"}, {"prefecture": "茨城県", "specialty": "納豆", "emoji": "🫘"}, {"prefecture": "栃木県", "specialty": "宇都宮餃子", "emoji": "🥟"}, {"prefecture": "群馬県", "specialty": "焼きまんじゅう", "emoji": "🍡"}, {"prefecture": "埼玉県", "specialty": "草加せんべい", "emoji": "🍘"}, {"prefecture": "千葉県", "specialty": "落花生", "emoji": "🥜"}, {"prefecture": "東京都", "specialty": "もんじゃ焼き", "emoji": "🥘"}, {"prefecture": "神奈川県", "specialty": "シウマイ", "emoji": "🥟"}, {"prefecture": "新潟県", "specialty": "笹団子", "emoji": "🍡"}, {"prefecture": "富山県", "specialty": "ます寿司", "emoji": "🍣"}, {"prefecture": "石川県", "specialty": "金沢カレー", "emoji": "🍛"}, {"prefecture": "福井県", "specialty": "越前おろしそば", "emoji": "🍜"}, {"prefecture": "山梨県", "specialty": "ほうとう", "emoji": "🍲"}, {"prefecture": "長野県", "specialty": "おやき", "emoji": "🥮"}, {"prefecture": "岐阜県", "specialty": "朴葉味噌", "emoji": "🍂"}, {"prefecture": "静岡県", "specialty": "うなぎ", "emoji": "🍱"}, {"prefecture": "愛知県", "specialty": "味噌カツ", "emoji": "🍖"}, {"prefecture": "三重県", "specialty": "赤福", "emoji": "🍡"}, {"prefecture": "滋賀県", "specialty": "鮒ずし", "emoji": "🐟"}, {"prefecture": "京都府", "specialty": "八ツ橋", "emoji": "🍘"}, {"prefecture": "大阪府", "specialty": "たこ焼き", "emoji": "🐙"}, {"prefecture": "兵庫県", "specialty": "明石焼き", "emoji": "🐙"}, {"prefecture": "奈良県", "specialty": "柿の葉寿司", "emoji": "🍣"}, {"prefecture": "和歌山県", "specialty": "梅干し", "emoji": "🔴"}, {"prefecture": "鳥取県", "specialty": "二十世紀梨", "emoji": "🍐"}, {"prefecture": "島根県", "specialty": "出雲そば", "emoji": "🍜"}, {"prefecture": "岡山県", "specialty": "きびだんご", "emoji": "🍡"}, {"prefecture": "広島県", "specialty": "もみじ饅頭", "emoji": "🍁"}, {"prefecture": "山口県", "specialty": "瓦そば", "emoji": "🍜"}, {"prefecture": "徳島県", "specialty": "徳島ラーメン", "emoji": "🍜"}, {"prefecture": "香川県", "specialty": "讃岐うどん", "emoji": "🍜"}, {"prefecture": "愛媛県", "specialty": "じゃこ天", "emoji": "🐟"}, {"prefecture": "高知県", "specialty": "かつおのたたき", "emoji": "🐟"}, {"prefecture": "福岡県", "specialty": "辛子明太子", "emoji": "🌶️"}, {"prefecture": "佐賀県", "specialty": "呼子のイカ", "emoji": "🦑"}, {"prefecture": "長崎県", "specialty": "カステラ", "emoji": "🍰"}, {"prefecture": "熊本県", "specialty": "馬刺し", "emoji": "🥩"}, {"prefecture": "大分県", "specialty": "とり天", "emoji": "🍗"}, {"prefecture": "宮崎県", "specialty": "チキン南蛮", "emoji": "🍗"}, {"prefecture": "鹿児島県", "specialty": "さつま揚げ", "emoji": "🍢"}, {"prefecture": "沖縄県", "specialty": "サーターアンダギー", "emoji": "🍩"}];
+const QUESTIONS_PER_GAME = 10;
+
+const startScreen = document.getElementById('startScreen');
+const quizScreen = document.getElementById('quizScreen');
+const resultScreen = document.getElementById('resultScreen');
+const startBtn = document.getElementById('startBtn');
+const retryBtn = document.getElementById('retryBtn');
+const backBtn = document.getElementById('backBtn');
+const nextBtn = document.getElementById('nextBtn');
+const questionCount = document.getElementById('questionCount');
+const scoreText = document.getElementById('scoreText');
+const progressBar = document.getElementById('progressBar');
+const specialtyText = document.getElementById('specialtyText');
+const questionEmoji = document.getElementById('questionEmoji');
+const choices = document.getElementById('choices');
+const feedback = document.getElementById('feedback');
+const resultScore = document.getElementById('resultScore');
+const resultEmoji = document.getElementById('resultEmoji');
+const rankText = document.getElementById('rankText');
+const resultMessage = document.getElementById('resultMessage');
+
+let questions = [];
+let index = 0;
+let score = 0;
+let answered = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startGame() {
+  questions = shuffle(DATA).slice(0, QUESTIONS_PER_GAME);
+  index = 0;
+  score = 0;
+  answered = false;
+  startScreen.classList.add('hidden');
+  resultScreen.classList.add('hidden');
+  quizScreen.classList.remove('hidden');
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  feedback.classList.remove('show');
+  nextBtn.classList.remove('show');
+  choices.innerHTML = '';
+
+  const q = questions[index];
+  questionCount.textContent = `第${index + 1}問 / ${QUESTIONS_PER_GAME}問`;
+  scoreText.textContent = `${score}点`;
+  progressBar.style.width = `${(index / QUESTIONS_PER_GAME) * 100}%`;
+  specialtyText.textContent = q.specialty;
+  questionEmoji.textContent = q.emoji;
+
+  const wrong = shuffle(DATA.filter(x => x.prefecture !== q.prefecture)).slice(0, 3);
+  const options = shuffle([q, ...wrong]);
+
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.textContent = opt.prefecture;
+    btn.addEventListener('click', () => chooseAnswer(btn, opt.prefecture, q));
+    choices.appendChild(btn);
+  });
+}
+
+function chooseAnswer(btn, selected, q) {
+  if (answered) return;
+  answered = true;
+
+  const buttons = [...choices.querySelectorAll('button')];
+  buttons.forEach(b => {
+    b.disabled = true;
+    if (b.textContent === q.prefecture) b.classList.add('correct');
+  });
+
+  if (selected === q.prefecture) {
+    score++;
+    feedback.innerHTML = `🎉 正解！ <strong>${q.specialty}</strong> は <strong>${q.prefecture}</strong> の代表的な名産のひとつです。`;
+  } else {
+    btn.classList.add('wrong');
+    feedback.innerHTML = `おしい！ 正解は <strong>${q.prefecture}</strong>。<br><strong>${q.specialty}</strong> を覚えておこう！`;
+  }
+
+  scoreText.textContent = `${score}点`;
+  feedback.classList.add('show');
+  nextBtn.textContent = index === QUESTIONS_PER_GAME - 1 ? '結果を見る' : '次の問題へ';
+  nextBtn.classList.add('show');
+}
+
+function nextQuestion() {
+  if (!answered) return;
+  if (index < QUESTIONS_PER_GAME - 1) {
+    index++;
+    showQuestion();
+  } else {
+    showResult();
+  }
+}
+
+function showResult() {
+  quizScreen.classList.add('hidden');
+  resultScreen.classList.remove('hidden');
+  progressBar.style.width = '100%';
+  resultScore.textContent = `${score} / ${QUESTIONS_PER_GAME}`;
+
+  let emoji, rank, msg;
+  if (score === 10) {
+    emoji = '👑';
+    rank = 'ご当地王！';
+    msg = '全問正解！47都道府県マスター級です。';
+  } else if (score >= 8) {
+    emoji = '🏆';
+    rank = 'ご当地博士！';
+    msg = 'かなり詳しい！あと少しでご当地王。';
+  } else if (score >= 5) {
+    emoji = '🗾';
+    rank = 'ご当地通！';
+    msg = 'いい感じ！遊びながらどんどん覚えよう。';
+  } else {
+    emoji = '🚅';
+    rank = 'ご当地旅人！';
+    msg = 'ここから全国制覇へ。もう一度挑戦してみよう！';
+  }
+  resultEmoji.textContent = emoji;
+  rankText.textContent = rank;
+  resultMessage.textContent = msg;
+}
+
+startBtn.addEventListener('click', startGame);
+retryBtn.addEventListener('click', startGame);
+nextBtn.addEventListener('click', nextQuestion);
+backBtn.addEventListener('click', () => {
+  resultScreen.classList.add('hidden');
+  quizScreen.classList.add('hidden');
+  startScreen.classList.remove('hidden');
+});
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
